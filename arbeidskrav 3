@@ -1,0 +1,33 @@
+library(tidyverse)
+library(rvest)
+library(readr)
+library(xml2)
+library(ggplot2)
+
+# Oppgave 1:
+
+# Last inn nettside
+
+bil <- read_html("https://www.motor.no/aktuelt/motors-store-vintertest-av-rekkevidde-pa-elbiler/217132/bil.html")
+
+# Gjør "bil" til tabell
+
+tables <- bil %>% html_table(fill = TRUE)
+
+# Finner at den tabellen vi skal ha er den første 
+
+table1 <- tables[[1]]
+
+colnames(table1) <- c("Modell (temp. varierte fra 0° til -10°)", "WLTP-tall", "STOPP", "Avvik")
+
+# Lager graf 
+
+Motor1 %>%
+  ggplot(aes(x = Rekkevidde, y = STOPP)) +
+  geom_point() +
+  geom_abline(color = "red") +
+  labs(
+    title = "Rekkevidde tapt i kulden",
+    y = "STOPP",
+    x = "WLTP")
+
