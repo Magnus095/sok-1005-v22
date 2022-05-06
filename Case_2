@@ -1,0 +1,174 @@
+library(jsonlite)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+
+## Oppgave 1
+# Importerer jsonfilen - lager det til et datasett
+
+json <- "https://static01.nyt.com/newsgraphics/2021/12/20/us-coronavirus-deaths-2021/ff0adde21623e111d8ce103fedecf7ffc7906264/scatter.json"
+
+# Gjør det om til et datasett og bruker fromJSON pga det er en jsonfil
+
+df <- fromJSON(json)
+
+# Lager et nytt navn til datasettet
+
+COVID <- df
+
+# Bruker mutate til å finne gjennomsnittligprosent av full vaksinerte
+
+COVID <- COVID %>% 
+  mutate(fully_vaccinated = fully_vaccinated_pct_of_pop*100)
+
+# Forkorter ned navnene for å få et bedre plott som er mer forståelig og pent
+
+COVID <- COVID %>%
+  mutate(short_name = abbreviate(COVID$name, minlength=2))
+
+# Lager et plott som er tilnærmet lik det som er på nettsiden
+COVID2 <- COVID %>% 
+  ggplot(aes(x= fully_vaccinated, y= deaths_per_100k)) +
+  geom_point(aes(colour=name)) + 
+  geom_smooth(method="loess", se=F) +
+  labs(title= "Covid-19 relaterte dødsfall i USA i forhold til vaksinerte og uvaksinerte", 
+       x= "Prosent av populasjonen fullvaksinert", 
+       y= "Dødsfall pr 100 000") +
+  theme_gray()+ 
+  geom_text(aes(label = short_name), adj = -0.2, cex = 3.5)+
+  annotate("text", x= 60, y =17, 
+           label = "      <-- Lower vaccination rate, 
+higher death rate",
+           col = "black",
+           size = 4) +
+  annotate("text", x= 73, y =9, 
+           label = "       <--  Higher vaccination rate, 
+lower death rate",
+           col = "black",
+           size = 4)+
+  scale_x_continuous(breaks = c(45,50,55,60,65,70,75,80),
+                     labels = function(x) paste0(x, "%"))
+
+COVID2
+
+## Oppgave 2
+# Bruker lm funkjsonen til å finne standardavviket i plottet (Standardavviket er et mål for spredningen av verdiene i et datasett)
+# Standardavviket i plottet (altså den grå felten rundt linjen).
+
+# En linær funksjon y = ax + b , her kan vi se at y representerer antall døde per 100k. b representerer intercept (konstantledd).
+# a representerer stigningstallet og x representerer andel fullvaksinerte.
+# a viser hvor mye y endrer seg når x øker med en enhet - det vil si hvis x feks øker fra 0 til 1 og det er det samme som at x øker fra 0% til 100%.
+# Tolkning av verdier:
+# b er intercept(31.15), dvs dødelighet hvis ingen er fullvaksinerte (x = 0), altså 31.15 personer dør per 100k.
+# a er stigninstallet (-0.366), dvs andelen fullvaksinerte øker med 1 prosent, reduseres dødeligheten med 0.366 per 100k.
+# Så hvis andelen fullvaksinerte øker med 3 prosent, så vil dødelighten per 100k reduseres med ca 1.
+
+
+
+### Derfor må vi dele på 100 for å finne ut hvor mye dødelighten endrer seg når andelen fullvaksinerte øker med 1 prosent. -36.66 / 100 = - 0.3666
+### Altså når andelen fullvaksinerte øker med en prosent reduseres dødeligheten med 0.366 døde per 100k.
+
+COVID %>% ggplot(aes(x= fully_vaccinated, y= deaths_per_100k)) +
+  geom_point(aes(colour=name)) + 
+  geom_smooth(method= lm) +
+  labs(title= "Covid-19 relaterte dødsfall i USA i forhold til vaksinerte og uvaksinerte", 
+       x= "Prosent av populasjonen fullvaksinert", 
+       y= "Dødsfall pr 100 000") +
+  theme_gray() +
+  geom_text(aes(label = short_name), adj = -0.2, cex = 3.5)+
+  annotate("text", x= 60, y =17, 
+           label = "       <- Lower vaccination rate, 
+higher death rate",
+           col = "black",
+           size = 4) +
+  annotate("text", x= 73, y =9, 
+           label = "       <- Higher vaccination rate, 
+lower death rate",
+           col = "black",
+           size = 4)+
+  scale_x_continuous(breaks = c(45,50,55,60,65,70,75,80),
+                     labels = function(x) paste0(x, "%"))
+
+lm(formula = deaths_per_100k ~ fully_vaccinated, data = COVID)
+
+require(jsonlite)
+require(tidyverse)
+require(ggplot2)
+require(ggrepel)
+
+
+url <- fromJSON("https://static01.nyt.com/newsgraphics/2021/12/20/us-coronavirus-deaths-2021/ff0adde21623e111d8ce103fedecf7ffc7906264/scatter.json")
+
+download.file(url, "lokal_nyc_data.json")
+
+
+plot <- url %>% 
+  ggplot(aes(x= fully_vaccinated_pct_of_pop, y= deaths_per_100k, label = name )) +
+  geom_point() +
+  geom_label_repel(
+    max.overlaps = Inf,
+    size = 3.5,
+    label.size = 0,
+    label.padding = 0,
+    label.r = 0,
+  ) +
+  labs(title= "Covid-19 dødsfall etter universal voksen vaksinedoksse sammenlignet mot vaksinasjon rates", 
+      x = "Andel befolkning fullvaksinert",
+      y = "dødsfall per 100k") +
+  theme_bw()
+
+plot
+
+
+
+
+#oppgave 2
+
+
+lm( deaths_per_100k ~ fully_vaccinated_pct_of_pop, data = url)
+
+# interecept = at x= 0, hvor linjen treff negative tallet = A 
+
+
+plot + geom_smooth(method = lm)
+
+require(jsonlite)
+require(tidyverse)
+require(ggplot2)
+require(ggrepel)
+
+
+url <- fromJSON("https://static01.nyt.com/newsgraphics/2021/12/20/us-coronavirus-deaths-2021/ff0adde21623e111d8ce103fedecf7ffc7906264/scatter.json")
+
+download.file(url, "lokal_nyc_data.json")
+
+
+plot <- url %>% 
+  ggplot(aes(x= fully_vaccinated_pct_of_pop, y= deaths_per_100k, label = name )) +
+  geom_point() +
+  geom_label_repel(
+    max.overlaps = Inf,
+    size = 3.5,
+    label.size = 0,
+    label.padding = 0,
+    label.r = 0,
+  ) +
+  labs(title= "Covid-19 dødsfall etter universal voksen vaksinedoksse sammenlignet mot vaksinasjon rates", 
+      x = "Andel befolkning fullvaksinert",
+      y = "dødsfall per 100k") +
+  theme_bw()
+
+plot
+
+
+
+
+#oppgave 2
+
+
+lm( deaths_per_100k ~ fully_vaccinated_pct_of_pop, data = url)
+
+# interecept = at x= 0, hvor linjen treff negative tallet = A 
+
+
+plot + geom_smooth(method = lm)
